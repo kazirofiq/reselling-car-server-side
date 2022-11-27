@@ -24,8 +24,7 @@ async function run(){
     const toyotaOptionCollection = client.db("reselling-Car").collection("toyota");
     const teslaOptionCollection = client.db("reselling-Car").collection("tesla");
     const bmwOptionCollection = client.db("reselling-Car").collection("bmw");
-    const bmwBookingCollection = client.db("reselling-Car").collection("bmwbookings");
-
+    const bookingCollection = client.db("reselling-Car").collection("bookings");
 
     // get bmw api data
     app.get('/bmw', async(req, res) =>{
@@ -49,11 +48,20 @@ async function run(){
         res.send(options);
     })
 
+    // get bookings api
+    app.get('/bookings', async(req, res) =>{
+        const email = req.query.email;
+        console.log(email)
+        const query ={email: email};
+        const bookings = await bookingCollection.find(query).toArray();
+        res.send(bookings);
+    })
+
     // Post all data 
-    app.post('/bmwbookings', async(req, res) =>{
-        const bmwBooking = req.body
-        console.log(bmwBooking)
-        const result = await bmwBookingCollection.insertOne(bmwBooking);
+    app.post('/bookings', async(req, res) =>{
+        const booking = req.body
+        console.log(booking)
+        const result = await bookingCollection.insertOne(booking);
         res.send(result);
     })
     
