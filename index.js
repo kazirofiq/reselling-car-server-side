@@ -20,6 +20,35 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.7k8mkis.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+function verifyJWT(req, res, next){
+    
+    const authHeader = req.headers.authorization;
+    if(!authHeader){
+        return res.status(401).send('unauthorized access');
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, function(err, decoded){
+        if(err){
+            return res.status(403).send({message: 'forbidden access'})
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
+// // Note: make sure you use verifyAdmin after verifyJWT
+// const verifyAdmin = async(req, res, next) =>{
+
+//     console.log('inside verifyAdmin', req.decoded.email)
+//     const decodedEmail = req.decoded.email;
+//     const query = {email: decodedEmail};
+//     const user = await usersCollection.findOne(query);
+//     if(user?.role !== 'admin'){
+//         return res.status(403).send({message: 'forbidden access'})
+//     }
+//     next();
+// } 
+
 async function run(){
     try{
             // all collection add
@@ -52,8 +81,13 @@ async function run(){
     })
 
     // get bookings api
-    app.get('/bookings', async(req, res) =>{
+    app.get('/bookings', verifyJWT, async(req, res) =>{
         const email = req.query.email;
+        const decodedEmail = req.decoded.email;
+
+        if(email !== decodedEmail){
+            return res.status(403).send({message: 'forbidden access'});
+        }
         console.log(email)
         const query ={email: email};
         const bookings = await bookingCollection.find(query).toArray();
@@ -71,6 +105,7 @@ async function run(){
      // jwt token
      app.get('/jwt', async(req, res) =>{
         const email = req.query.email;
+        
         const query = {email: email};
         const user = await usersCollection.findOne(query);
         console.log(user);
@@ -81,7 +116,12 @@ async function run(){
         }  
         res.status(403).send({accessToken: ''})
     })
-
+        // get all users
+        app.get('/users', async(req, res) =>{
+            const query = {};
+            const users = await usersCollection.find(query).toArray();
+            res.send(users);
+        })
     app.post('/users', async(req, res) =>{
         const user = req.body;
         const result = await usersCollection.insertOne(user);
