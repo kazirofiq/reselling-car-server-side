@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const jwt = require('jsonwebtoken');
 
@@ -130,7 +130,7 @@ async function run(){
     })
 
      // make admin panel
-     app.put('/users/admin/:id', verifyJWT, verifyAdmin, async(req, res) =>{
+     app.put('/users/admin/:id',verifyJWT, async(req, res) =>{
         const id = req.params.id;
         const filter ={_id: ObjectId(id) }
         const options = { upsert: true };
