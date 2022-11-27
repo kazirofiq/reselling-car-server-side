@@ -128,6 +128,20 @@ async function run(){
         res.send(result);
 
     })
+
+     // make admin panel
+     app.put('/users/admin/:id', verifyJWT, verifyAdmin, async(req, res) =>{
+        const id = req.params.id;
+        const filter ={_id: ObjectId(id) }
+        const options = { upsert: true };
+        const updatedDoc = {
+            $set: {
+                role: 'admin'
+            }
+        }
+        const result = await usersCollection.updateOne(filter, updatedDoc, options);
+        res.send(result);
+    })
     
 
     }
