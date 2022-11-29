@@ -49,6 +49,18 @@ function verifyJWT(req, res, next){
 //     next();
 // } 
 
+// const verifySeller = async(req, res, next) =>{
+
+//     console.log('inside verifySeller', req.decoded.email)
+//     const decodedEmail = req.decoded.email;
+//     const query = {email: decodedEmail};
+//     const user = await usersCollection.findOne(query);
+//     if(user?.role !== 'seller'){
+//         return res.status(403).send({message: 'forbidden access'})
+//     }
+//     next();
+// } 
+
 async function run(){
     try{
             // all collection add
@@ -57,6 +69,7 @@ async function run(){
     const bmwOptionCollection = client.db("reselling-Car").collection("bmw");
     const bookingCollection = client.db("reselling-Car").collection("bookings");
     const usersCollection = client.db("reselling-Car").collection("users");
+    const carsCollection = client.db("reselling-Car").collection("cars");
 
     // get bmw api data
     app.get('/bmw', async(req, res) =>{
@@ -125,19 +138,21 @@ async function run(){
 
         // get admin email user
 
-    // app.get('/users/admin/:email', async(req, res) =>{
-    //     const email = req.params.email;
-    //     const query = {email}
-    //     const user = await usersCollection.findOne(query);
-    //     res.send({isAdmin: user?.role === 'admin'});
-    // })
-
-    app.get('/users/admin/:id', async(req, res) =>{
-        const email = req.params.id;
-        const query = {_id: ObjectId(id)}
+    app.get('/users/admin/:email', async(req, res) =>{
+        const email = req.params.email;
+        const query = {email}
         const user = await usersCollection.findOne(query);
         res.send({isAdmin: user?.role === 'admin'});
     })
+    // Seller
+    app.get('/users/seller/:email', async(req, res) =>{
+        const email = req.params.email;
+        const query = {email}
+        const user = await usersCollection.findOne(query);
+        res.send({isAdmin: user?.role === 'admin'});
+    })
+
+    
 
     app.post('/users', async(req, res) =>{
         const user = req.body;
@@ -146,6 +161,28 @@ async function run(){
 
     })
 
+     // make Seller panel
+     app.put('/users/seller/:id', verifyJWT,  async(req, res) =>{
+        const decodedEmail = req.decoded.email;
+        const query = {email: decodedEmail};
+        const user = await usersCollection.findOne(query);
+
+        if(user?.role !== 'admin'){
+            return res.status(403).send({message: "forbidden access"})
+
+        }
+
+        const id = req.params.id;
+        const filter ={_id: ObjectId(id) }
+        const options = { upsert: true };
+        const updatedDoc = {
+            $set: {
+                role: 'seller'
+            }
+        }
+        const result = await usersCollection.updateOne(filter, updatedDoc, options);
+        res.send(result);
+    })
      // make admin panel
      app.put('/users/admin/:id', verifyJWT,  async(req, res) =>{
         const decodedEmail = req.decoded.email;
@@ -168,6 +205,28 @@ async function run(){
         const result = await usersCollection.updateOne(filter, updatedDoc, options);
         res.send(result);
     })
+     // get cars all data
+
+     app.get('/cars', async(req, res) =>{
+        const query = {};
+        const cars = await carsCollection.find(query).toArray();
+        res.send(cars);
+    })
+
+    app.post('/cars', async(req,res)=>{
+        const cars = req.body;
+        const result = await carsCollection.insertOne(cars);
+        res.send(result);
+    });
+
+    // Delete  cars side
+    app.delete('/cars/:id', verifyJWT, async(req, res) => {
+        const id = req.params.id;
+        const filter = {_id: ObjectId(id) };
+        const result = await carsCollection.deleteOne(filter);
+        res.send(result);
+    })
+    
     
 
     }
