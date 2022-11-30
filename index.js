@@ -149,8 +149,9 @@ async function run(){
         const email = req.params.email;
         const query = {email}
         const user = await usersCollection.findOne(query);
-        res.send({isAdmin: user?.role === 'admin'});
+        res.send({isSeller: user?.role === 'seller'});
     })
+    
 
     
 
@@ -161,6 +162,7 @@ async function run(){
 
     })
 
+     
      // make Seller panel
      app.put('/users/seller/:id', verifyJWT,  async(req, res) =>{
         const decodedEmail = req.decoded.email;
